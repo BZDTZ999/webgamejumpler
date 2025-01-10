@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>跳跃与躲避小游戏</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #000;
+    }
+    .container {
+      position: relative;
+      width: 100%;
+      height: 100px;
+      overflow: hidden;
+      border: 1px solid #333;
+    }
+    .player {
+      position: absolute;
+      width: 10px;
+      height: 60px; /* 普通状态高度 */
+      background-color: #fff;
+      bottom: 5px;
+      left: 20px;
+      transition: height 0.1s; /* 下蹲动画 */
+    }
+    .obstacle {
+      position: absolute;
+      width: 15px;
+    }
+    .obstacle.high {
+      bottom: 60px;
+      height: 60px; /* 上方障碍物高度 */
+      background-color: #ff6347; /* 上方障碍物为红色 */
+    }
+    .obstacle.low {
+      bottom: 5px;
+      height: 40px; /* 下方普通障碍物高度 */
+      background-color: #32cd32; /* 下方普通障碍物为绿色 */
+    }
+    .obstacle.pursuit {
+      bottom: 5px;
+      height: 40px; /* 追逐障碍物高度 */
+      background-color: #1e90ff; /* 追逐障碍物为蓝色 */
+    }
+    .score {
+      position: absolute;
+      top: 5px;
+      left: 10px;
+      font-size: 12px;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container" id="gameContainer">
+    <div class="player" id="player"></div>
+  </div>
+  <div class="score" id="scoreDisplay">得分: 0</div>
+
+  <script>
+    const container = document.getElementById('gameContainer');
+    const player = document.getElementById('player');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+
+    let gameRunning = true;
+    let isJumping = false;
+    let isCrouching = false;
+    let isMovingLeft = false;
+    let isMovingRight = false;
+    let obstacles = [];
+    let animationFrameId;
+    let score = 0;
+    let obstacleSpeed = 2;
+    let jumpVelocity = 6;
+    let gravity = 0.25;
+    let playerY = 5;
+    let velocityY = 0;
+    let playerX = 20; // 初始水平位置
+    let playerHeight = 60; // 初始人物高度
+
+    function startGame() {
+      score = 0;
+      obstacles = [];
+      playerY = 5;
+      velocityY = 0;
+      playerX = 20;
+      updateScore();
+      createObstacle();
+      gameLoop();
+    }
+
+    function gameLoop() {
+      if (!gameRunning) return;
+
+      // 跳跃逻辑
+      if (isJumping) {
+        velocityY -= gravity;
+        playerY += velocityY;
+        if (playerY <= 5) {
+          playerY = 5;
+          isJumping = false;
+          velocityY = 0;
+        }
+      }
+
+      // 下蹲逻辑
+      if (isCrouching) {
+        player.style.height = "30px"; // 下蹲高度
+        playerHeight = 30;
+      } else {
+        player.style.height = "60px"; // 普通高度
+        playerHeight = 60;
+      }
+
+      // 横向移动逻辑
+      if (isMovingLeft && playerX > 0) {
+        playerX -= 2; // 向左平滑移动
+      }
+      if (isMovingRight && playerX < container.offsetWidth - 10) {
+        playerX += 2; // 向右平滑移动
+      }
+
+      // 更新角色位置
+      player.style.bottom = `${playerY}px`;
+      player.style.left = `${playerX}px`;
+
+      // 移动障碍物
+      obstacles.forEach(obstacle => moveObstacle(obstacle));
+      checkCollisions();
+
+      animationFrameId = requestAnimationFrame(gameLoop);
+    }
+
+    function jump() {
+      if (isJumping) return;
+      isJumping = true;
+      velocityY = jumpVelocity;
+    }
+
+    function crouch(state) {
+      isCrouching = state;
+    }
+
+    function createObstacle() {
+      if (!gameRunning) return;
+
+      const obstacle = document.createElement("div");
+      obstacle.classList.add("obstacle");
+
+      // 随机生成上方障碍物、下方普通障碍物或追逐障碍物
+      const obstacleType = Math.random();
+      if (obstacleType > 0.7) {
+        obstacle.classList.add("pursuit"); // 生成追逐障碍物
+      } else if (obstacleType > 0.3) {
+        obstacle.classList.add("high"); // 生成上方障碍物
+      } else {
+        obstacle.classList.add("low"); // 生成下方障碍物
+      }
+
+      obstacle.style.left = `${container.offsetWidth}px`;
+      container.appendChild(obstacle);
+      obstacles.push(obstacle);
+
+      const randomGap = Math.random() * 1200 + 800;
+      setTimeout(() => createObstacle(), randomGap);
+    }
+
+    function moveObstacle(obstacle) {
+      const currentLeft = parseInt(obstacle.style.left || 0);
+
+      // 追逐障碍物逻辑
+      if (obstacle.classList.contains('pursuit')) {
+        const playerLeft = player.offsetLeft;
+        if (currentLeft > playerLeft - 20) {
+          obstacle.style.left = `${currentLeft - obstacleSpeed * 1.5}px`; // 追逐障碍物加速
+        } else {
+          obstacle.style.left = `${currentLeft - obstacleSpeed}px`; // 普通移动
+        }
+      } else {
+        // 普通障碍物移动逻辑
+        if (currentLeft < playerX && !obstacle.scored) {
+          increaseScore();
+          obstacle.scored = true; // 避免重复得分
+        }
+
+        if (currentLeft < -15) {
+          obstacle.remove();
+          obstacles = obstacles.filter(o => o !== obstacle);
+        } else {
+          obstacle.style.left = `${currentLeft - obstacleSpeed}px`;
+        }
+      }
+    }
+
+    function checkCollisions() {
+      const playerRect = player.getBoundingClientRect();
+      obstacles.forEach(obstacle => {
+        const obstacleRect = obstacle.getBoundingClientRect();
+        if (
+          playerRect.left < obstacleRect.right &&
+          playerRect.right > obstacleRect.left &&
+          playerRect.bottom > obstacleRect.top &&
+          playerRect.top < obstacleRect.bottom
+        ) {
+          gameOver();
+        }
+      });
+    }
+
+    function gameOver() {
+      gameRunning = false;
+      cancelAnimationFrame(animationFrameId);
+      alert('游戏结束！得分: ' + score);
+      location.reload();
+    }
+
+    function increaseScore() {
+      score++;
+      updateScore();
+      if (score % 5 === 0) {
+        obstacleSpeed += 0.2;
+      }
+    }
+
+    function updateScore() {
+      scoreDisplay.textContent = '得分: ' + score;
+    }
+
+    // 键盘事件
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'ArrowUp') jump();
+      if (e.code === 'ArrowDown') crouch(true);
+      if (e.code === 'ArrowLeft') isMovingLeft = true;
+      if (e.code === 'ArrowRight') isMovingRight = true;
+    });
+
+    document.addEventListener('keyup', (e) => {
+      if (e.code === 'ArrowDown') crouch(false);
+      if (e.code === 'ArrowLeft') isMovingLeft = false;
+      if (e.code === 'ArrowRight') isMovingRight = false;
+    });
+
+    const gameContainer = document.getElementById('gameContainer');
+      gameContainer.addEventListener('touchstart', (e) => e.preventDefault(), { passive: false });
+      gameContainer.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+      gameContainer.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
+
+
+    container.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      touchStartX = touch.clientX;
+      touchStartY = touch.clientY;
+    });
+
+    container.addEventListener('touchmove', (e) => {
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - touchStartX;
+      const deltaY = touch.clientY - touchStartY;
+
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        if (deltaX > 30) isMovingRight = true;
+        if (deltaX < -30) isMovingLeft = true;
+      } else {
+        if (deltaY < -30) jump();
+        if (deltaY > 30) crouch(true);
+      }
+    });
+
+    container.addEventListener('touchend', () => {
+      isMovingLeft = false;
+      isMovingRight = false;
+      crouch(false);
+    });
+
+    startGame();
+  </script>
+</body>
+</html>
