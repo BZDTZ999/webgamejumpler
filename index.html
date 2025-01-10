@@ -262,7 +262,8 @@ function startGame() {
 
 // 初始化页面点击事件
 container.addEventListener('click', startGame, { once: true });
-
+container.addEventListener('touchstart', startGame, { once: true });
+    
     function increaseScore() {
       score++;
       updateScore();
