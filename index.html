@@ -214,57 +214,58 @@
       });
     }
 
-let highScore = 0;
-
-function gameOver() {
-  gameRunning = false;
-  cancelAnimationFrame(animationFrameId);
-
-  // 更新最高得分
-  if (score > highScore) {
-    highScore = score;
-  }
-
-  // 显示结束界面
-  const gameOverLayer = document.createElement('div');
-  gameOverLayer.style.position = 'absolute';
-  gameOverLayer.style.top = '0';
-  gameOverLayer.style.left = '0';
-  gameOverLayer.style.width = '100%';
-  gameOverLayer.style.height = '100%';
-  gameOverLayer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
-  gameOverLayer.style.color = '#fff';
-  gameOverLayer.style.display = 'flex';
-  gameOverLayer.style.flexDirection = 'column';
-  gameOverLayer.style.justifyContent = 'center';
-  gameOverLayer.style.alignItems = 'center';
-  gameOverLayer.style.zIndex = '10';
-  gameOverLayer.id = 'gameOverLayer';
-
-  gameOverLayer.innerHTML = `
-    <p style="font-size: 20px; margin-bottom: 10px;">游戏结束！</p>
-    <p style="font-size: 18px;">得分: ${score}</p>
-    <p style="font-size: 18px;">最高得分: ${highScore}</p>
-    <button style="margin-top: 20px; padding: 10px 20px; font-size: 16px;">重新开始</button>
-  `;
-
-  const restartButton = gameOverLayer.querySelector('button');
-  restartButton.addEventListener('click', restartGame);
-
-  container.appendChild(gameOverLayer);
-}
-
-function restartGame() {
-  const gameOverLayer = document.getElementById('gameOverLayer');
-  if (gameOverLayer) {
-    container.removeChild(gameOverLayer);
-  }
-
-  gameRunning = true;
-  score = 0;
-  obstacleSpeed = 2;
-  startGame();
-}
+    let highScore = 0;
+    
+    function gameOver() {
+      gameRunning = false;
+      cancelAnimationFrame(animationFrameId);
+      location.reload();
+    
+      // 更新最高得分
+      if (score > highScore) {
+        highScore = score;
+      }
+    
+      // 显示结束界面
+      const gameOverLayer = document.createElement('div');
+      gameOverLayer.style.position = 'absolute';
+      gameOverLayer.style.top = '0';
+      gameOverLayer.style.left = '0';
+      gameOverLayer.style.width = '100%';
+      gameOverLayer.style.height = '100%';
+      gameOverLayer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+      gameOverLayer.style.color = '#fff';
+      gameOverLayer.style.display = 'flex';
+      gameOverLayer.style.flexDirection = 'column';
+      gameOverLayer.style.justifyContent = 'center';
+      gameOverLayer.style.alignItems = 'center';
+      gameOverLayer.style.zIndex = '10';
+      gameOverLayer.id = 'gameOverLayer';
+    
+      gameOverLayer.innerHTML = `
+        <p style="font-size: 20px; margin-bottom: 10px;">游戏结束！</p>
+        <p style="font-size: 18px;">得分: ${score}</p>
+        <p style="font-size: 18px;">最高得分: ${highScore}</p>
+        <button style="margin-top: 20px; padding: 10px 20px; font-size: 16px;">重新开始</button>
+      `;
+    
+      const restartButton = gameOverLayer.querySelector('button');
+      restartButton.addEventListener('click', restartGame);
+    
+      container.appendChild(gameOverLayer);
+    }
+    
+    function restartGame() {
+      const gameOverLayer = document.getElementById('gameOverLayer');
+      if (gameOverLayer) {
+        container.removeChild(gameOverLayer);
+      }
+    
+      gameRunning = true;
+      score = 0;
+      obstacleSpeed = 2;
+      startGame();
+    }
     
     function increaseScore() {
       score++;
@@ -305,14 +306,6 @@ function restartGame() {
       if (!gameRunning) {
         restartGame(); // 触摸屏幕重新开始
         return;
-      }
-    
-      if (touchY < window.innerHeight / 2) {
-        jump(); // 上半屏触发跳跃
-      } else if (touchX < window.innerWidth / 2) {
-        isMovingLeft = true; // 左半屏触发左移
-      } else {
-        isMovingRight = true; // 右半屏触发右移
       }
     });
     
