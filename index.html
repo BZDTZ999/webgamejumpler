@@ -214,55 +214,57 @@
       });
     }
 
+let highScore = 0;
+
 function gameOver() {
   gameRunning = false;
   cancelAnimationFrame(animationFrameId);
 
-  // 清空障碍物
-  obstacles.forEach(obstacle => obstacle.remove());
-  obstacles = [];
+  // 更新最高得分
+  if (score > highScore) {
+    highScore = score;
+  }
 
-  // 显示得分和最高分
-  const highestScore = Math.max(score, parseInt(localStorage.getItem('highestScore') || '0'));
-  localStorage.setItem('highestScore', highestScore); // 保存最高分到本地存储
+  // 显示结束界面
+  const gameOverLayer = document.createElement('div');
+  gameOverLayer.style.position = 'absolute';
+  gameOverLayer.style.top = '0';
+  gameOverLayer.style.left = '0';
+  gameOverLayer.style.width = '100%';
+  gameOverLayer.style.height = '100%';
+  gameOverLayer.style.backgroundColor = 'rgba(0, 0, 0, 0.8)';
+  gameOverLayer.style.color = '#fff';
+  gameOverLayer.style.display = 'flex';
+  gameOverLayer.style.flexDirection = 'column';
+  gameOverLayer.style.justifyContent = 'center';
+  gameOverLayer.style.alignItems = 'center';
+  gameOverLayer.style.zIndex = '10';
+  gameOverLayer.id = 'gameOverLayer';
 
-  const gameOverMessage = `
-    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-                color: #fff; text-align: center; font-size: 20px; background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 10px;">
-      <p>游戏结束！</p>
-      <p>得分: ${score}</p>
-      <p>最高分: ${highestScore}</p>
-      <p>点击屏幕重新开始</p>
-    </div>
+  gameOverLayer.innerHTML = `
+    <p style="font-size: 20px; margin-bottom: 10px;">游戏结束！</p>
+    <p style="font-size: 18px;">得分: ${score}</p>
+    <p style="font-size: 18px;">最高得分: ${highScore}</p>
+    <button style="margin-top: 20px; padding: 10px 20px; font-size: 16px;">重新开始</button>
   `;
 
-  container.innerHTML = gameOverMessage;
+  const restartButton = gameOverLayer.querySelector('button');
+  restartButton.addEventListener('click', restartGame);
 
-  // 重新开始游戏
-  container.addEventListener('click', startGame, { once: true });
+  container.appendChild(gameOverLayer);
 }
 
-function startGame() {
-  // 重置游戏状态
+function restartGame() {
+  const gameOverLayer = document.getElementById('gameOverLayer');
+  if (gameOverLayer) {
+    container.removeChild(gameOverLayer);
+  }
+
   gameRunning = true;
   score = 0;
-  obstacles = [];
-  playerY = 5;
-  velocityY = 0;
-  playerX = 20;
-
-  // 清空容器内容并恢复初始状态
-  container.innerHTML = '';
-  container.appendChild(player);
-  updateScore();
-
-  createObstacle();
-  gameLoop();
+  obstacleSpeed = 2;
+  startGame();
 }
-
-// 初始化页面点击事件
-container.addEventListener('click', startGame, { once: true });
-container.addEventListener('touchstart', startGame, { once: true });
     
     function increaseScore() {
       score++;
@@ -296,31 +298,29 @@ container.addEventListener('touchstart', startGame, { once: true });
       gameContainer.addEventListener('touchend', (e) => e.preventDefault(), { passive: false });
 
 
-    container.addEventListener('touchstart', (e) => {
-      const touch = e.touches[0];
-      touchStartX = touch.clientX;
-      touchStartY = touch.clientY;
-    });
-
-    container.addEventListener('touchmove', (e) => {
-      const touch = e.touches[0];
-      const deltaX = touch.clientX - touchStartX;
-      const deltaY = touch.clientY - touchStartY;
-
-      if (Math.abs(deltaX) > Math.abs(deltaY)) {
-        if (deltaX > 30) isMovingRight = true;
-        if (deltaX < -30) isMovingLeft = true;
+    document.addEventListener('touchstart', (e) => {
+      const touchX = e.touches[0].clientX;
+      const touchY = e.touches[0].clientY;
+    
+      if (!gameRunning) {
+        restartGame(); // 触摸屏幕重新开始
+        return;
+      }
+    
+      if (touchY < window.innerHeight / 2) {
+        jump(); // 上半屏触发跳跃
+      } else if (touchX < window.innerWidth / 2) {
+        isMovingLeft = true; // 左半屏触发左移
       } else {
-        if (deltaY < -30) jump();
-        if (deltaY > 30) crouch(true);
+        isMovingRight = true; // 右半屏触发右移
       }
     });
-
-    container.addEventListener('touchend', () => {
+    
+    document.addEventListener('touchend', () => {
       isMovingLeft = false;
       isMovingRight = false;
-      crouch(false);
     });
+
 
     startGame();
   </script>
