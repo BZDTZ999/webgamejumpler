@@ -218,50 +218,50 @@ function gameOver() {
   gameRunning = false;
   cancelAnimationFrame(animationFrameId);
 
-  // 显示得分和最高得分
-  const gameOverMessage = document.createElement('div');
-  gameOverMessage.id = 'gameOverMessage';
-  gameOverMessage.style.position = 'absolute';
-  gameOverMessage.style.top = '50%';
-  gameOverMessage.style.left = '50%';
-  gameOverMessage.style.transform = 'translate(-50%, -50%)';
-  gameOverMessage.style.textAlign = 'center';
-  gameOverMessage.style.color = '#fff';
-  gameOverMessage.style.fontSize = '18px';
-  gameOverMessage.style.background = 'rgba(0, 0, 0, 0.8)';
-  gameOverMessage.style.padding = '20px';
-  gameOverMessage.style.borderRadius = '10px';
+  // 清空障碍物
+  obstacles.forEach(obstacle => obstacle.remove());
+  obstacles = [];
 
-  // 获取最高分
-  const highestScore = localStorage.getItem('highestScore') || 0;
-  if (score > highestScore) {
-    localStorage.setItem('highestScore', score);
-  }
+  // 显示得分和最高分
+  const highestScore = Math.max(score, parseInt(localStorage.getItem('highestScore') || '0'));
+  localStorage.setItem('highestScore', highestScore); // 保存最高分到本地存储
 
-  gameOverMessage.innerHTML = `
-    <p>游戏结束！</p>
-    <p>得分: ${score}</p>
-    <p>最高得分: ${localStorage.getItem('highestScore')}</p>
-    <p>点击屏幕重新开始</p>
+  const gameOverMessage = `
+    <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                color: #fff; text-align: center; font-size: 20px; background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 10px;">
+      <p>游戏结束！</p>
+      <p>得分: ${score}</p>
+      <p>最高分: ${highestScore}</p>
+      <p>点击屏幕重新开始</p>
+    </div>
   `;
 
-  container.appendChild(gameOverMessage);
+  container.innerHTML = gameOverMessage;
 
-  // 添加点击事件以重新开始游戏
-  container.addEventListener('click', restartGame, { once: true });
+  // 重新开始游戏
+  container.addEventListener('click', startGame, { once: true });
 }
 
-function restartGame() {
-  const gameOverMessage = document.getElementById('gameOverMessage');
-  if (gameOverMessage) {
-    gameOverMessage.remove();
-  }
-  container.removeEventListener('click', restartGame);
-
+function startGame() {
+  // 重置游戏状态
   gameRunning = true;
-  startGame();
+  score = 0;
+  obstacles = [];
+  playerY = 5;
+  velocityY = 0;
+  playerX = 20;
+
+  // 清空容器内容并恢复初始状态
+  container.innerHTML = '';
+  container.appendChild(player);
+  updateScore();
+
+  createObstacle();
+  gameLoop();
 }
 
+// 初始化页面点击事件
+container.addEventListener('click', startGame, { once: true });
 
     function increaseScore() {
       score++;
